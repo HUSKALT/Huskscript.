@@ -1,0 +1,110 @@
+-- HUSKscript v1.0
+-- Ispirato da Infinite Yield
+-- Creato da HUSKALT
+
+local Giocatori = game:GetService("Players")
+local GiocatoreLocale = Giocatori.LocalPlayer
+local Mouse = GiocatoreLocale:GetMouse()
+local StarterGui = game:GetService("StarterGui")
+
+-- Crea l'interfaccia della barra dei comandi
+local screenGui = Instance.new("ScreenGui", game.CoreGui)
+screenGui.Name = "HUSKscriptGUI"
+
+local barraComandi = Instance.new("TextBox")
+barraComandi.Parent = screenGui
+barraComandi.Size = UDim2.new(0, 400, 0, 30)
+barraComandi.Position = UDim2.new(0.5, -200, 1, -40)
+barraComandi.AnchorPoint = Vector2.new(0.5, 1)
+barraComandi.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+barraComandi.TextColor3 = Color3.new(1, 1, 1)
+barraComandi.TextSize = 16
+barraComandi.PlaceholderText = "Inserisci comando HUSK..."
+barraComandi.ClearTextOnFocus = false
+
+-- Mostra/Nascondi interfaccia con il tasto ";"
+local aperto = false
+Mouse.KeyDown:Connect(function(tasto)
+    if tasto == ";" then
+        aperto = not aperto
+        barraComandi.Visible = aperto
+        if aperto then
+            barraComandi:CaptureFocus()
+        else
+            barraComandi:ReleaseFocus()
+        end
+    end
+end)
+
+-- Definizione comandi
+local comandi = {}
+
+comandi.kill = function(args)
+    local bersaglio = Giocatori:FindFirstChild(args[1])
+    if bersaglio and bersaglio.Character then
+        bersaglio.Character:BreakJoints()
+    end
+end
+
+comandi.respawn = function(args)
+    local bersaglio = Giocatori:FindFirstChild(args[1])
+    if bersaglio and bersaglio.Character then
+        local posizione = bersaglio.Character:GetPrimaryPartCFrame()
+        bersaglio:LoadCharacter()
+        task.wait(0.1)
+        if bersaglio.Character and bersaglio.Character:FindFirstChild("HumanoidRootPart") then
+            bersaglio.Character.HumanoidRootPart.CFrame = posizione
+        end
+    end
+end
+
+comandi.speed = function(args)
+    local velocita = tonumber(args[1]) or 50
+    if GiocatoreLocale.Character and GiocatoreLocale.Character:FindFirstChild("Humanoid") then
+        GiocatoreLocale.Character.Humanoid.WalkSpeed = velocita
+    end
+end
+
+comandi.fly = function(args)
+    -- Script base di volo (semplificato)
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/XNEOFF/FlyGuiV3/main/FlyGuiV3.txt"))()
+end
+
+comandi.cmds = function(args)
+    StarterGui:SetCore("SendNotification", {
+        Title = "Comandi HUSKscript",
+        Text = ";kill ;respawn ;speed ;fly ;cmds",
+        Duration = 5
+    })
+end
+
+-- Gestione dell'input della barra comandi
+barraComandi.FocusLost:Connect(function(invioPremuto)
+    if not invioPremuto then return end
+    local input = barraComandi.Text
+    barraComandi.Text = ""
+
+    local parti = input:split(" ")
+    local nomeComando = parti[1]:gsub(";", "")
+    table.remove(parti, 1)
+
+    local comando = comandi[nomeComando]
+    if comando then
+        pcall(function()
+            comando(parti)
+        end)
+    else
+        StarterGui:SetCore("SendNotification", {
+            Title = "HUSKscript",
+            Text = "Comando sconosciuto: " .. nomeComando,
+            Duration = 3
+        })
+    end
+end)
+
+-- Messaggio iniziale
+StarterGui:SetCore("SendNotification", {
+    Title = "HUSKscript",
+    Text = "Caricato! Premi ';' per aprire la barra comandi.",
+    Duration = 5
+})
